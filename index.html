@@ -302,9 +302,8 @@
             });
         }
 
-        // --- 変更箇所 START ---
         function updateSummary(transactions){
-            const viewDate = currentDate; // 表示しているカレンダーの日付を基準にする
+            const viewDate = new Date(currentDate); // 表示しているカレンダーの日付を基準にする
             const startDay = userSettings.startDay || 1;
             
             // 表示日を基準に、その月（期間）の開始日を計算する
@@ -328,24 +327,32 @@
             }
             const periodEndDate = new Date(periodEndYear, periodEndMonth, startDay, 0, 0, 0, 0);
 
+            // --- 変更箇所 START ---
+            const normalizedViewDate = new Date(currentDate);
+            normalizedViewDate.setHours(0, 0, 0, 0); // 比較のために時刻を0に
+
             let monthlyTotal = 0; 
             let overallTotal = 0;
             transactions.forEach(t=>{
                 const amount = t.type === 'income' ? t.amount : -t.amount;
-                overallTotal += amount;
                 const parts = t.date.split('-');
-                // タイムゾーンの問題を避けるため、時刻を0に設定
                 const transactionDate = new Date(parts[0], parts[1]-1, parts[2], 0, 0, 0, 0);
                 
-                // 取引日が計算した期間内にあるかチェック
+                // 「今までの合計」: 取引日が表示されている日以前なら加算
+                if (transactionDate <= normalizedViewDate) {
+                    overallTotal += amount;
+                }
+
+                // 「今月の合計」: 取引日が計算した期間内にあるかチェック
                 if (transactionDate >= periodStartDate && transactionDate < periodEndDate) {
                     monthlyTotal += amount;
                 }
             });
+            // --- 変更箇所 END ---
+
             monthlyTotalEl.textContent = `${monthlyTotal.toLocaleString()}円`;
             overallTotalEl.textContent = `${overallTotal.toLocaleString()}円`;
         }
-        // --- 変更箇所 END ---
 
         function updateHistory(allTransactions){
             historyList.innerHTML = '';
