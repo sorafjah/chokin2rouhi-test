@@ -318,16 +318,6 @@
             }
             const periodStartDate = new Date(periodStartYear, periodStartMonth, startDay, 0, 0, 0, 0);
 
-            // 期間の終了日（次の期間の開始日）を計算する
-            let periodEndYear = periodStartYear;
-            let periodEndMonth = periodStartMonth + 1;
-            if (periodEndMonth > 11) {
-                periodEndMonth = 0;
-                periodEndYear += 1;
-            }
-            const periodEndDate = new Date(periodEndYear, periodEndMonth, startDay, 0, 0, 0, 0);
-
-            // --- 変更箇所 START ---
             const normalizedViewDate = new Date(currentDate);
             normalizedViewDate.setHours(0, 0, 0, 0); // 比較のために時刻を0に
 
@@ -342,13 +332,14 @@
                 if (transactionDate <= normalizedViewDate) {
                     overallTotal += amount;
                 }
-
-                // 「今月の合計」: 取引日が計算した期間内にあるかチェック
-                if (transactionDate >= periodStartDate && transactionDate < periodEndDate) {
+                
+                // --- 変更箇所 START ---
+                // 「今月の合計」: 期間の開始日から、表示している日までの合計を計算
+                if (transactionDate >= periodStartDate && transactionDate <= normalizedViewDate) {
                     monthlyTotal += amount;
                 }
+                // --- 変更箇所 END ---
             });
-            // --- 変更箇所 END ---
 
             monthlyTotalEl.textContent = `${monthlyTotal.toLocaleString()}円`;
             overallTotalEl.textContent = `${overallTotal.toLocaleString()}円`;
