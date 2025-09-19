@@ -89,8 +89,9 @@
         .calendar-day-today { border: 2px solid #2dd4bf; }
         .calendar-day-other-month { color: #d1d5db; }
         .day-balance {
-            font-size: 0.6rem;
+            font-size: 0.5rem; /* Adjusted font size for full number */
             margin-top: -2px;
+            line-height: 1;
         }
     </style>
 </head>
@@ -454,7 +455,7 @@
             ['日','月','火','水','木','金','土'].forEach(day => {
                 const dayEl = document.createElement('div');
                 dayEl.textContent = day;
-                dayEl.className = 'font-bold text-lime-600';
+                dayEl.className = 'font-bold text-green-600';
                 calendarGrid.appendChild(dayEl);
             });
 
@@ -485,9 +486,12 @@
                 if (dailyTotal !== 0) {
                     const balanceEl = document.createElement('span');
                     balanceEl.className = 'day-balance';
-                    balanceEl.textContent = dailyTotal > 0 ? `+${Math.round(dailyTotal/1000)}k` : `${Math.round(dailyTotal/1000)}k`;
-                    if (dailyTotal < 0) balanceEl.classList.add('text-orange-500');
-                    else balanceEl.classList.add('text-green-600');
+                    balanceEl.textContent = Math.abs(dailyTotal).toLocaleString();
+                    if (dailyTotal < 0) {
+                        balanceEl.classList.add('text-orange-500');
+                    } else {
+                        balanceEl.classList.add('text-green-600');
+                    }
                     dayEl.appendChild(balanceEl);
                 }
 
