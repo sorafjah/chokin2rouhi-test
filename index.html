@@ -48,24 +48,10 @@
         .hidden { display: none; }
 
         /* Calendar Styles */
-        #calendar-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 50;
-        }
-        #calendar-container {
-            background-color: white;
+        #calendar-view {
             padding: 1rem;
-            border-radius: 1rem;
-            width: 90%;
             max-width: 400px;
+            margin: 0 auto;
         }
         #calendar-grid {
             display: grid;
@@ -112,66 +98,62 @@
     </div>
 
     <div id="app-container" class="hidden">
-        <!-- The header title has been removed -->
-        <main class="p-4 max-w-md mx-auto">
-            <div class="flex justify-between items-center my-4">
-                <button id="prev-day" class="p-2 text-teal-500 text-2xl"><i class="fas fa-chevron-left"></i></button>
-                <h2 id="current-date" class="text-xl font-semibold cursor-pointer"></h2>
-                <button id="next-day" class="p-2 text-teal-500 text-2xl"><i class="fas fa-chevron-right"></i></button>
-            </div>
-
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <button class="btn-amount btn-amount-unselected" data-amount="1000">1000円</button>
-                    <button class="btn-amount btn-amount-unselected" data-amount="500">500円</button>
-                    <button class="btn-amount btn-amount-unselected" data-amount="150">150円</button>
-                    <button class="btn-amount btn-amount-unselected" data-amount="100">100円</button>
+        <div id="main-view">
+             <main class="p-4 max-w-md mx-auto">
+                <div class="flex justify-between items-center my-4">
+                    <button id="prev-day" class="p-2 text-teal-500 text-2xl"><i class="fas fa-chevron-left"></i></button>
+                    <h2 id="current-date" class="text-xl font-semibold cursor-pointer"></h2>
+                    <button id="next-day" class="p-2 text-teal-500 text-2xl"><i class="fas fa-chevron-right"></i></button>
                 </div>
 
-                <div class="flex items-center justify-center my-5">
-                    <button id="decrease-btn" class="w-12 h-12 bg-blue-500 text-white rounded-full text-2xl font-bold flex items-center justify-center shadow-md">-</button>
-                    <input id="amount-input" type="number" value="0" class="w-32 text-center text-4xl font-bold mx-4 bg-transparent border-none focus:outline-none transition-colors">
-                    <button id="increase-btn" class="w-12 h-12 bg-blue-500 text-white rounded-full text-2xl font-bold flex items-center justify-center shadow-md">+</button>
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <button class="btn-amount btn-amount-unselected" data-amount="1000">1000円</button>
+                        <button class="btn-amount btn-amount-unselected" data-amount="500">500円</button>
+                        <button class="btn-amount btn-amount-unselected" data-amount="150">150円</button>
+                        <button class="btn-amount btn-amount-unselected" data-amount="100">100円</button>
+                    </div>
+
+                    <div class="flex items-center justify-center my-5">
+                        <button id="decrease-btn" class="w-12 h-12 bg-blue-500 text-white rounded-full text-2xl font-bold flex items-center justify-center shadow-md">-</button>
+                        <input id="amount-input" type="number" value="0" class="w-32 text-center text-4xl font-bold mx-4 bg-transparent border-none focus:outline-none transition-colors">
+                        <button id="increase-btn" class="w-12 h-12 bg-blue-500 text-white rounded-full text-2xl font-bold flex items-center justify-center shadow-md">+</button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="type-toggle-btn" class="py-3 text-lg font-semibold rounded-lg transition-all duration-300"></button>
+                        <button id="save-btn" class="bg-teal-500 text-white py-3 text-lg font-semibold rounded-lg hover:bg-teal-600 transition-colors flex items-center justify-center gap-2">
+                            <i class="fas fa-save"></i>保存する
+                        </button>
+                    </div>
+                    <p id="entry-error" class="text-red-500 mt-2 text-sm h-5 text-center"></p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <button id="type-toggle-btn" class="py-3 text-lg font-semibold rounded-lg transition-all duration-300"></button>
-                    <button id="save-btn" class="bg-teal-500 text-white py-3 text-lg font-semibold rounded-lg hover:bg-teal-600 transition-colors flex items-center justify-center gap-2">
-                        <i class="fas fa-save"></i>保存する
-                    </button>
+                <div class="grid grid-cols-2 gap-4 my-6">
+                    <div class="bg-purple-100 text-purple-800 p-4 rounded-xl shadow-md text-center">
+                        <p class="font-semibold">今月の合計</p>
+                        <p id="monthly-total" class="text-2xl font-bold">0円</p>
+                    </div>
+                    <div class="bg-green-100 text-green-800 p-4 rounded-xl shadow-md text-center">
+                        <p class="font-semibold">今までの合計</p>
+                        <p id="overall-total" class="text-2xl font-bold">0円</p>
+                    </div>
                 </div>
-                <p id="entry-error" class="text-red-500 mt-2 text-sm h-5 text-center"></p>
-            </div>
 
-            <div class="grid grid-cols-2 gap-4 my-6">
-                <div class="bg-purple-100 text-purple-800 p-4 rounded-xl shadow-md text-center">
-                    <p class="font-semibold">今月の合計</p>
-                    <p id="monthly-total" class="text-2xl font-bold">0円</p>
+                <div>
+                    <h3 id="history-title" class="text-lg font-semibold mb-2 pb-1 border-b-2 border-teal-400"></h3>
+                    <ul id="history-list"></ul>
+                    <p id="no-records" class="text-gray-500 text-center py-8">今日の記録はありません。</p>
                 </div>
-                <div class="bg-green-100 text-green-800 p-4 rounded-xl shadow-md text-center">
-                    <p class="font-semibold">今までの合計</p>
-                    <p id="overall-total" class="text-2xl font-bold">0円</p>
-                </div>
-            </div>
 
-            <div>
-                <h3 id="history-title" class="text-lg font-semibold mb-2 pb-1 border-b-2 border-teal-400"></h3>
-                <ul id="history-list"></ul>
-                <p id="no-records" class="text-gray-500 text-center py-8">今日の記録はありません。</p>
-            </div>
-
-        </main>
-
-        <footer class="text-center p-4">
-            <button id="logout-btn" class="text-xs text-gray-400 hover:underline">ログアウト</button>
-        </footer>
-    </div>
-
-    <!-- Calendar Modal -->
-    <div id="calendar-modal" class="hidden">
-        <div id="calendar-overlay" class="fixed inset-0 bg-black opacity-50"></div>
-        <div id="calendar-container" class="relative bg-white p-4 rounded-lg shadow-xl w-11/12 max-w-sm">
-            <div class="flex justify-between items-center mb-4">
+            </main>
+             <footer class="text-center p-4">
+                <button id="logout-btn" class="text-xs text-gray-400 hover:underline">ログアウト</button>
+            </footer>
+        </div>
+       
+        <div id="calendar-view" class="hidden">
+             <div class="flex justify-between items-center mb-4 mt-4">
                 <button id="calendar-prev-month" class="p-2 text-teal-500 text-xl"><i class="fas fa-chevron-left"></i></button>
                 <h3 id="calendar-month-year" class="text-lg font-bold"></h3>
                 <button id="calendar-next-month" class="p-2 text-teal-500 text-xl"><i class="fas fa-chevron-right"></i></button>
@@ -192,7 +174,7 @@
         import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, setDoc, getDoc, deleteDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // Firebase 設定（あなたのプロジェクト設定を埋めています）
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDB-RxYhEGAs6EJPbBXcHaFMSZiysIpnl8",
             authDomain: "chokin2rouhi.firebaseapp.com",
@@ -206,7 +188,7 @@
         const db = getFirestore(app);
         const auth = getAuth();
 
-        // DOM 要素
+        // DOM Elements
         const authContainer = document.getElementById('auth-container');
         const appContainer = document.getElementById('app-container');
         const loginBtn = document.getElementById('login-btn');
@@ -229,10 +211,12 @@
         const historyList = document.getElementById('history-list');
         const noRecordsEl = document.getElementById('no-records');
         const historyTitle = document.getElementById('history-title');
+        
+        // View containers
+        const mainView = document.getElementById('main-view');
+        const calendarView = document.getElementById('calendar-view');
 
         // Calendar DOM
-        const calendarModal = document.getElementById('calendar-modal');
-        const calendarOverlay = document.getElementById('calendar-overlay');
         const calendarGrid = document.getElementById('calendar-grid');
         const calendarMonthYear = document.getElementById('calendar-month-year');
         const calendarPrevMonthBtn = document.getElementById('calendar-prev-month');
@@ -240,8 +224,7 @@
         const calendarMonthlyTotalEl = document.getElementById('calendar-monthly-total');
         const calendarMonthlyTotalLabel = document.getElementById('calendar-monthly-total-label');
 
-
-        // 状態
+        // State
         let currentUserId = null;
         let userSettings = { startDay: 1 };
         let currentDate = new Date();
@@ -252,7 +235,7 @@
         let allTransactions = [];
         let calendarDate = new Date();
 
-        // 日付フォーマット
+        // Date Formatting
         function formatDate(date) {
             const today = new Date();
             today.setHours(0,0,0,0);
@@ -274,7 +257,7 @@
         prevDayBtn.addEventListener('click', ()=>{ currentDate.setDate(currentDate.getDate()-1); updateDateDisplay(); listenToTransactions(); });
         nextDayBtn.addEventListener('click', ()=>{ currentDate.setDate(currentDate.getDate()+1); updateDateDisplay(); listenToTransactions(); });
 
-        // 金額操作
+        // Amount manipulation
         function updateAmount(value){ currentAmount = Math.max(0, value); amountInput.value = currentAmount; }
         amountButtons.forEach(btn=>{ btn.addEventListener('click', ()=>{
             const amount = parseInt(btn.dataset.amount);
@@ -304,7 +287,7 @@
         }
         typeToggleBtn.addEventListener('click', ()=>toggleType());
 
-        // ログイン処理
+        // Login
         loginBtn.addEventListener('click', async ()=>{
             const nickname = nicknameInput.value.trim();
             if (nickname.length === 0){ authError.textContent = 'ニックネームを入力してください。'; return; }
@@ -439,6 +422,18 @@
         }
 
         // --- Calendar Logic ---
+        function showCalendarView() {
+            mainView.classList.add('hidden');
+            calendarView.classList.remove('hidden');
+            calendarDate = new Date(currentDate);
+            generateCalendar();
+        }
+
+        function showMainView() {
+            calendarView.classList.add('hidden');
+            mainView.classList.remove('hidden');
+        }
+
         function generateCalendar() {
             calendarGrid.innerHTML = '';
             const year = calendarDate.getFullYear();
@@ -502,20 +497,15 @@
                     currentDate = new Date(year, month, i);
                     updateDateDisplay();
                     listenToTransactions(); // Refresh totals and history
-                    calendarModal.classList.add('hidden');
+                    showMainView();
                 });
                 calendarGrid.appendChild(dayEl);
             }
             calendarMonthlyTotalEl.textContent = `${calendarMonthTotal.toLocaleString()}円`;
         }
         
-        currentDateEl.addEventListener('click', () => {
-            calendarDate = new Date(currentDate);
-            generateCalendar();
-            calendarModal.classList.remove('hidden');
-        });
+        currentDateEl.addEventListener('click', showCalendarView);
 
-        calendarOverlay.addEventListener('click', () => calendarModal.classList.add('hidden'));
         calendarPrevMonthBtn.addEventListener('click', () => {
             calendarDate.setMonth(calendarDate.getMonth() - 1);
             generateCalendar();
@@ -526,7 +516,7 @@
         });
 
 
-        // --- PWA設定 START ---
+        // --- PWA setup START ---
         function setupPWA() {
             const manifestData = {
                 "name": "貯金と浪費。", "short_name": "貯金と浪費", "start_url": ".",
@@ -540,9 +530,9 @@
             const manifestURL = URL.createObjectURL(manifestBlob);
             document.querySelector('#manifest').setAttribute('href', manifestURL);
         }
-        // --- PWA設定 END ---
+        // --- PWA setup END ---
 
-        // UI 初期化
+        // UI Initialization
         function populateStartDaySelect(){ for (let i=1;i<=28;i++){ const option = document.createElement('option'); option.value = i; option.textContent = `${i}日`; startDaySelect.appendChild(option); } }
 
         function initialize(){
