@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>貯金と浪費。</title>
     
+    <!-- PWA settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2dd4bf">
+    <link rel="manifest" id="manifest">
+    
     <link rel="apple-touch-icon" href="chokin.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -40,6 +46,52 @@
         }
         .btn-amount-unselected:hover { background-color: rgb(165, 243, 252); }
         .hidden { display: none; }
+
+        /* Calendar Styles */
+        #calendar-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+        #calendar-container {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 400px;
+        }
+        #calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            text-align: center;
+        }
+        .calendar-day {
+            padding: 4px;
+            border-radius: 9999px; /* circle */
+            cursor: pointer;
+            height: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.75rem;
+        }
+        .calendar-day:hover { background-color: #f0f0f0; }
+        .calendar-day-selected { background-color: #2dd4bf; color: white; }
+        .calendar-day-today { border: 2px solid #2dd4bf; }
+        .calendar-day-other-month { color: #d1d5db; }
+        .day-balance {
+            font-size: 0.6rem;
+            margin-top: -2px;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -59,14 +111,11 @@
     </div>
 
     <div id="app-container" class="hidden">
-        <header class="bg-teal-500 text-white p-4 shadow-md sticky top-0 z-10">
-            <h1 class="text-xl font-bold text-center" id="main-title">貯金と浪費。</h1>
-        </header>
-
+        <!-- The header title has been removed -->
         <main class="p-4 max-w-md mx-auto">
             <div class="flex justify-between items-center my-4">
                 <button id="prev-day" class="p-2 text-teal-500 text-2xl"><i class="fas fa-chevron-left"></i></button>
-                <h2 id="current-date" class="text-xl font-semibold"></h2>
+                <h2 id="current-date" class="text-xl font-semibold cursor-pointer"></h2>
                 <button id="next-day" class="p-2 text-teal-500 text-2xl"><i class="fas fa-chevron-right"></i></button>
             </div>
 
@@ -117,6 +166,26 @@
         </footer>
     </div>
 
+    <!-- Calendar Modal -->
+    <div id="calendar-modal" class="hidden">
+        <div id="calendar-overlay" class="fixed inset-0 bg-black opacity-50"></div>
+        <div id="calendar-container" class="relative bg-white p-4 rounded-lg shadow-xl w-11/12 max-w-sm">
+            <div class="flex justify-between items-center mb-4">
+                <button id="calendar-prev-month" class="p-2 text-teal-500 text-xl"><i class="fas fa-chevron-left"></i></button>
+                <h3 id="calendar-month-year" class="text-lg font-bold"></h3>
+                <button id="calendar-next-month" class="p-2 text-teal-500 text-xl"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center text-sm">
+                <!-- Day names will be populated by JS -->
+            </div>
+            <div class="mt-4 pt-2 border-t text-center">
+                <p id="calendar-monthly-total-label" class="text-sm text-gray-600">この月の合計</p>
+                <p id="calendar-monthly-total" class="font-bold text-lg">0円</p>
+            </div>
+        </div>
+    </div>
+
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, setDoc, getDoc, deleteDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -160,6 +229,17 @@
         const noRecordsEl = document.getElementById('no-records');
         const historyTitle = document.getElementById('history-title');
 
+        // Calendar DOM
+        const calendarModal = document.getElementById('calendar-modal');
+        const calendarOverlay = document.getElementById('calendar-overlay');
+        const calendarGrid = document.getElementById('calendar-grid');
+        const calendarMonthYear = document.getElementById('calendar-month-year');
+        const calendarPrevMonthBtn = document.getElementById('calendar-prev-month');
+        const calendarNextMonthBtn = document.getElementById('calendar-next-month');
+        const calendarMonthlyTotalEl = document.getElementById('calendar-monthly-total');
+        const calendarMonthlyTotalLabel = document.getElementById('calendar-monthly-total-label');
+
+
         // 状態
         let currentUserId = null;
         let userSettings = { startDay: 1 };
@@ -168,6 +248,8 @@
         let isIncome = true;
         let unsubscribe = null;
         let stepAmount = 100;
+        let allTransactions = [];
+        let calendarDate = new Date();
 
         // 日付フォーマット
         function formatDate(date) {
@@ -221,7 +303,7 @@
         }
         typeToggleBtn.addEventListener('click', ()=>toggleType());
 
-        // ログイン処理（ニックネーム入力 → 匿名ログイン）
+        // ログイン処理
         loginBtn.addEventListener('click', async ()=>{
             const nickname = nicknameInput.value.trim();
             if (nickname.length === 0){ authError.textContent = 'ニックネームを入力してください。'; return; }
@@ -231,24 +313,17 @@
                 const userCredential = await signInAnonymously(auth);
                 const uid = userCredential.user.uid;
                 currentUserId = uid;
-
-                // ユーザー情報を作成または更新
                 const userDocRef = doc(db, 'users', uid);
                 const userSnap = await getDoc(userDocRef);
                 const startDay = parseInt(startDaySelect.value) || 1;
-                
                 if (!userSnap.exists()){
-                    // 新規ユーザーの場合、ドキュメントを新規作成
                     await setDoc(userDocRef, { nickname, startDay, createdAt: serverTimestamp() });
                     userSettings = { nickname, startDay };
                 } else {
-                    // 既存ユーザーの場合、月の開始日を更新
                     await setDoc(userDocRef, { startDay }, { merge: true });
-                    // DBから読み込んだ設定に、今回選択した開始日を上書きして使用する
                     userSettings = userSnap.data();
                     userSettings.startDay = startDay; 
                 }
-
                 localStorage.setItem('okane-app-userid', uid);
                 initializeAppState(uid);
             }catch(err){ console.error(err); authError.textContent = 'ログインに失敗しました。'; setTimeout(()=>authError.textContent='',3000); }
@@ -294,32 +369,27 @@
             if (unsubscribe) unsubscribe();
             const q = query(collection(db, 'transactions'), where('userId', '==', currentUserId));
             unsubscribe = onSnapshot(q, (querySnapshot)=>{
-                const transactions = [];
-                querySnapshot.forEach((d)=>{ transactions.push({ id: d.id, ...d.data() }); });
-                transactions.sort((a,b)=>{ if(!a.createdAt || !b.createdAt) return 0; return b.createdAt.seconds - a.createdAt.seconds; });
-                updateSummary(transactions);
-                updateHistory(transactions);
+                allTransactions = [];
+                querySnapshot.forEach((d)=>{ allTransactions.push({ id: d.id, ...d.data() }); });
+                allTransactions.sort((a,b)=>{ if(!a.createdAt || !b.createdAt) return 0; return b.createdAt.seconds - a.createdAt.seconds; });
+                updateSummary(allTransactions);
+                updateHistory(allTransactions);
             });
         }
 
         function updateSummary(transactions){
-            const viewDate = new Date(currentDate); // 表示しているカレンダーの日付を基準にする
+            const viewDate = new Date(currentDate);
             const startDay = userSettings.startDay || 1;
             
-            // 表示日を基準に、その月（期間）の開始日を計算する
             let periodStartYear = viewDate.getFullYear();
             let periodStartMonth = viewDate.getMonth();
             if (viewDate.getDate() < startDay){ 
                 periodStartMonth -= 1; 
-                if (periodStartMonth < 0){ 
-                    periodStartMonth = 11; 
-                    periodStartYear -= 1; 
-                } 
+                if (periodStartMonth < 0){ periodStartMonth = 11; periodStartYear -= 1; } 
             }
             const periodStartDate = new Date(periodStartYear, periodStartMonth, startDay, 0, 0, 0, 0);
-
             const normalizedViewDate = new Date(currentDate);
-            normalizedViewDate.setHours(0, 0, 0, 0); // 比較のために時刻を0に
+            normalizedViewDate.setHours(0, 0, 0, 0);
 
             let monthlyTotal = 0; 
             let overallTotal = 0;
@@ -328,17 +398,9 @@
                 const parts = t.date.split('-');
                 const transactionDate = new Date(parts[0], parts[1]-1, parts[2], 0, 0, 0, 0);
                 
-                // 「今までの合計」: 取引日が表示されている日以前なら加算
-                if (transactionDate <= normalizedViewDate) {
-                    overallTotal += amount;
-                }
-                
-                // 「今月の合計」: 期間の開始日から、表示している日までの合計を計算
-                if (transactionDate >= periodStartDate && transactionDate <= normalizedViewDate) {
-                    monthlyTotal += amount;
-                }
+                if (transactionDate <= normalizedViewDate) { overallTotal += amount; }
+                if (transactionDate >= periodStartDate && transactionDate <= normalizedViewDate) { monthlyTotal += amount; }
             });
-
             monthlyTotalEl.textContent = `${monthlyTotal.toLocaleString()}円`;
             overallTotalEl.textContent = `${overallTotal.toLocaleString()}円`;
         }
@@ -375,6 +437,107 @@
             }
         }
 
+        // --- Calendar Logic ---
+        function generateCalendar() {
+            calendarGrid.innerHTML = '';
+            const year = calendarDate.getFullYear();
+            const month = calendarDate.getMonth();
+            calendarMonthYear.textContent = `${year}年 ${month + 1}月`;
+            calendarMonthlyTotalLabel.textContent = `${month + 1}月の合計`;
+
+
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            ['日','月','火','水','木','金','土'].forEach(day => {
+                const dayEl = document.createElement('div');
+                dayEl.textContent = day;
+                dayEl.className = 'font-bold text-lime-600';
+                calendarGrid.appendChild(dayEl);
+            });
+
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                calendarGrid.appendChild(document.createElement('div'));
+            }
+
+            let calendarMonthTotal = 0;
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                const dayDate = new Date(year, month, i);
+                dayDate.setHours(0,0,0,0);
+                
+                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const dailyTransactions = allTransactions.filter(t => t.date === dateString);
+                let dailyTotal = 0;
+                if (dailyTransactions.length > 0) {
+                    dailyTotal = dailyTransactions.reduce((acc, t) => acc + (t.type === 'income' ? t.amount : -t.amount), 0);
+                }
+                calendarMonthTotal += dailyTotal;
+
+                const dayNumber = document.createElement('span');
+                dayNumber.textContent = i;
+                dayEl.appendChild(dayNumber);
+
+                if (dailyTotal !== 0) {
+                    const balanceEl = document.createElement('span');
+                    balanceEl.className = 'day-balance';
+                    balanceEl.textContent = dailyTotal > 0 ? `+${Math.round(dailyTotal/1000)}k` : `${Math.round(dailyTotal/1000)}k`;
+                    if (dailyTotal < 0) balanceEl.classList.add('text-orange-500');
+                    else balanceEl.classList.add('text-green-600');
+                    dayEl.appendChild(balanceEl);
+                }
+
+                if (dayDate.getTime() === currentDate.setHours(0,0,0,0)) dayEl.classList.add('calendar-day-selected');
+                if (dayDate.getTime() === today.getTime()) dayEl.classList.add('calendar-day-today');
+
+                dayEl.addEventListener('click', () => {
+                    currentDate = new Date(year, month, i);
+                    updateDateDisplay();
+                    listenToTransactions(); // Refresh totals and history
+                    calendarModal.classList.add('hidden');
+                });
+                calendarGrid.appendChild(dayEl);
+            }
+            calendarMonthlyTotalEl.textContent = `${calendarMonthTotal.toLocaleString()}円`;
+        }
+        
+        currentDateEl.addEventListener('click', () => {
+            calendarDate = new Date(currentDate);
+            generateCalendar();
+            calendarModal.classList.remove('hidden');
+        });
+
+        calendarOverlay.addEventListener('click', () => calendarModal.classList.add('hidden'));
+        calendarPrevMonthBtn.addEventListener('click', () => {
+            calendarDate.setMonth(calendarDate.getMonth() - 1);
+            generateCalendar();
+        });
+        calendarNextMonthBtn.addEventListener('click', () => {
+            calendarDate.setMonth(calendarDate.getMonth() + 1);
+            generateCalendar();
+        });
+
+
+        // --- PWA設定 START ---
+        function setupPWA() {
+            const manifestData = {
+                "name": "貯金と浪費。", "short_name": "貯金と浪費", "start_url": ".",
+                "display": "standalone", "background_color": "#ffffff", "theme_color": "#2dd4bf",
+                "icons": [
+                    { "src": "chokin.jpg", "type": "image/jpeg", "sizes": "192x192" },
+                    { "src": "chokin.jpg", "type": "image/jpeg", "sizes": "512x512" }
+                ]
+            };
+            const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+            const manifestURL = URL.createObjectURL(manifestBlob);
+            document.querySelector('#manifest').setAttribute('href', manifestURL);
+        }
+        // --- PWA設定 END ---
+
         // UI 初期化
         function populateStartDaySelect(){ for (let i=1;i<=28;i++){ const option = document.createElement('option'); option.value = i; option.textContent = `${i}日`; startDaySelect.appendChild(option); } }
 
@@ -383,19 +546,15 @@
             updateDateDisplay();
             updateAmount(0);
             toggleType(true);
-            // 既に匿名ログインしているかチェック
+            setupPWA();
             onAuthStateChanged(auth, async (user)=>{
                 if (user){
                     const uid = user.uid;
                     currentUserId = uid;
-                    // ユーザー設定を読み込む
                     const userDocSnap = await getDoc(doc(db, 'users', uid));
-                    if (userDocSnap.exists()){
-                        userSettings = userDocSnap.data();
-                    }
+                    if (userDocSnap.exists()){ userSettings = userDocSnap.data(); }
                     initializeAppState(uid);
                 } else {
-                    // 認証していない場合はログイン画面を表示
                     authContainer.classList.remove('hidden');
                     appContainer.classList.add('hidden');
                 }
