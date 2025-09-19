@@ -333,12 +333,10 @@
                     overallTotal += amount;
                 }
                 
-                // --- 変更箇所 START ---
                 // 「今月の合計」: 期間の開始日から、表示している日までの合計を計算
                 if (transactionDate >= periodStartDate && transactionDate <= normalizedViewDate) {
                     monthlyTotal += amount;
                 }
-                // --- 変更箇所 END ---
             });
 
             monthlyTotalEl.textContent = `${monthlyTotal.toLocaleString()}円`;
