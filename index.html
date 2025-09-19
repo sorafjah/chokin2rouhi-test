@@ -63,21 +63,21 @@
             padding: 4px;
             border-radius: 9999px; /* circle */
             cursor: pointer;
-            height: 40px;
+            height: 48px; /* Increased height */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-size: 0.75rem;
+            font-size: 0.875rem; /* Increased font size */
         }
         .calendar-day:hover { background-color: #f0f0f0; }
         .calendar-day-selected { background-color: #2dd4bf; color: white; }
         .calendar-day-today { border: 2px solid #2dd4bf; }
         .calendar-day-other-month { color: #d1d5db; }
         .day-balance {
-            font-size: 0.5rem; /* Adjusted font size for full number */
-            margin-top: -2px;
-            line-height: 1;
+            font-size: 0.625rem; /* Increased font size */
+            margin-top: -1px;
+            line-height: 1.2;
         }
     </style>
 </head>
@@ -131,7 +131,7 @@
 
                 <div class="grid grid-cols-2 gap-4 my-6">
                     <div class="bg-purple-100 text-purple-800 p-4 rounded-xl shadow-md text-center">
-                        <p class="font-semibold">今月の合計</p>
+                        <p class="font-semibold">今月度の合計</p>
                         <p id="monthly-total" class="text-2xl font-bold">0円</p>
                     </div>
                     <div class="bg-green-100 text-green-800 p-4 rounded-xl shadow-md text-center">
@@ -154,16 +154,16 @@
        
         <div id="calendar-view" class="hidden">
              <div class="flex justify-between items-center mb-4 mt-4">
-                <button id="calendar-prev-month" class="p-2 text-teal-500 text-xl"><i class="fas fa-chevron-left"></i></button>
-                <h3 id="calendar-month-year" class="text-lg font-bold"></h3>
-                <button id="calendar-next-month" class="p-2 text-teal-500 text-xl"><i class="fas fa-chevron-right"></i></button>
+                <button id="calendar-prev-month" class="p-2 text-teal-500 text-2xl"><i class="fas fa-chevron-left"></i></button>
+                <h3 id="calendar-month-year" class="text-xl font-bold"></h3>
+                <button id="calendar-next-month" class="p-2 text-teal-500 text-2xl"><i class="fas fa-chevron-right"></i></button>
             </div>
             <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center text-sm">
                 <!-- Day names will be populated by JS -->
             </div>
-            <div class="mt-4 pt-2 border-t text-center">
-                <p id="calendar-monthly-total-label" class="text-sm text-gray-600">この月の合計</p>
-                <p id="calendar-monthly-total" class="font-bold text-lg">0円</p>
+            <div class="mt-4 pt-4 border-t text-center">
+                <p id="calendar-monthly-total-label" class="text-base text-gray-600">この月の合計</p>
+                <p id="calendar-monthly-total" class="font-bold text-2xl">0円</p>
             </div>
         </div>
     </div>
@@ -450,7 +450,7 @@
             ['日','月','火','水','木','金','土'].forEach(day => {
                 const dayEl = document.createElement('div');
                 dayEl.textContent = day;
-                dayEl.className = 'font-bold text-green-600';
+                dayEl.className = 'font-bold text-green-600 text-base'; // Increased font size
                 calendarGrid.appendChild(dayEl);
             });
 
@@ -481,7 +481,7 @@
                 if (dailyTotal !== 0) {
                     const balanceEl = document.createElement('span');
                     balanceEl.className = 'day-balance';
-                    balanceEl.textContent = Math.abs(dailyTotal).toLocaleString();
+                    balanceEl.textContent = (dailyTotal > 0 ? '+' : '') + dailyTotal.toLocaleString();
                     if (dailyTotal < 0) {
                         balanceEl.classList.add('text-orange-500');
                     } else {
@@ -502,6 +502,12 @@
                 calendarGrid.appendChild(dayEl);
             }
             calendarMonthlyTotalEl.textContent = `${calendarMonthTotal.toLocaleString()}円`;
+            calendarMonthlyTotalEl.classList.remove('text-green-600', 'text-orange-500');
+            if (calendarMonthTotal >= 0) {
+                calendarMonthlyTotalEl.classList.add('text-green-600');
+            } else {
+                calendarMonthlyTotalEl.classList.add('text-orange-500');
+            }
         }
         
         currentDateEl.addEventListener('click', showCalendarView);
